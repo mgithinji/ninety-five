@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
@@ -14,6 +14,7 @@ import { Loader2 } from 'lucide-react'
 export default function LoginPage() {
   const router = useRouter()
   const supabase = createClient()
+  const formRef = useRef<HTMLFormElement>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [isSignUp, setIsSignUp] = useState(false)
   const [email, setEmail] = useState('')
@@ -77,7 +78,7 @@ export default function LoginPage() {
             {isSignUp ? 'Create your account to get started' : 'Sign in to your account'}
           </CardDescription>
         </CardHeader>
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} ref={formRef}>
           <CardContent className="space-y-4">
             {isSignUp && (
               <div className="space-y-2">
@@ -116,6 +117,16 @@ export default function LoginPage() {
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key !== 'Enter') {
+                    return
+                  }
+
+                  event.preventDefault()
+                  if (!isLoading) {
+                    formRef.current?.requestSubmit()
+                  }
+                }}
                 required
                 minLength={6}
               />
