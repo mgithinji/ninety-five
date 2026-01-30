@@ -115,12 +115,31 @@ export function ResumeUploader({ onUploadComplete }: ResumeUploaderProps) {
         body: JSON.stringify({}),
       })
 
-      const parseResult = await parseResponse.json()
+      const parseText = await parseResponse.text()
+      let parseResult: any = null
+      if (parseText) {
+        try {
+          parseResult = JSON.parse(parseText)
+        } catch {
+          parseResult = { error: parseText }
+        }
+      }
+
       console.log('Parse response:', parseResponse.status, parseResult)
 
       if (!parseResponse.ok) {
         console.error('Parse error:', parseResult)
-        throw new Error(`Parse failed: ${parseResult.error || parseResult.details || parseResponse.statusText || 'Unknown error'}`)
+        const errorMessage =
+          parseResult?.error ||
+          parseResult?.details ||
+          parseResult?.message ||
+          parseResponse.statusText ||
+          'Unknown error'
+        throw new Error(`Parse failed: ${errorMessage}`)
+      }
+
+      if (!parseResult) {
+        throw new Error('Parse failed: Empty response from server')
       }
 
       console.log('Parse successful:', parseResult)
