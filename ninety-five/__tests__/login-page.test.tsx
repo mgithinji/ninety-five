@@ -1,7 +1,7 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import LoginPage from '@/app/login/page'
-import * as supabaseClient from '@/lib/supabase/client'
+import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 
@@ -14,6 +14,10 @@ jest.mock('sonner', () => ({
     success: jest.fn(),
     error: jest.fn(),
   },
+}))
+
+jest.mock('@/lib/supabase/client', () => ({
+  createClient: jest.fn(),
 }))
 
 jest.mock('@/components/ui/sonner', () => ({
@@ -33,6 +37,7 @@ const mockPush = jest.fn()
 const mockRefresh = jest.fn()
 
 const mockUseRouter = useRouter as jest.MockedFunction<typeof useRouter>
+const mockCreateClient = createClient as jest.MockedFunction<typeof createClient>
 
 describe('LoginPage', () => {
   beforeEach(() => {
@@ -40,8 +45,9 @@ describe('LoginPage', () => {
     mockSignUp.mockReset()
     mockPush.mockReset()
     mockRefresh.mockReset()
+    mockCreateClient.mockReset()
 
-    jest.spyOn(supabaseClient, 'createClient').mockReturnValue({
+    mockCreateClient.mockReturnValue({
       auth: {
         signInWithPassword: mockSignIn,
         signUp: mockSignUp,
@@ -55,7 +61,6 @@ describe('LoginPage', () => {
   })
 
   afterEach(() => {
-    jest.restoreAllMocks()
     jest.clearAllMocks()
   })
 

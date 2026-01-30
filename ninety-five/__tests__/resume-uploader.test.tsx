@@ -1,7 +1,7 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { ResumeUploader } from '@/components/features/ResumeUploader'
-import * as supabaseClient from '@/lib/supabase/client'
+import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
 
 jest.mock('sonner', () => ({
@@ -9,6 +9,10 @@ jest.mock('sonner', () => ({
     success: jest.fn(),
     error: jest.fn(),
   },
+}))
+
+jest.mock('@/lib/supabase/client', () => ({
+  createClient: jest.fn(),
 }))
 
 jest.mock('@/components/ui/sonner', () => ({
@@ -21,6 +25,7 @@ const mockStorageFrom = jest.fn(() => ({ upload: mockUpload }))
 const mockEq = jest.fn()
 const mockUpdate = jest.fn(() => ({ eq: mockEq }))
 const mockFrom = jest.fn(() => ({ update: mockUpdate }))
+const mockCreateClient = createClient as jest.MockedFunction<typeof createClient>
 
 describe('ResumeUploader', () => {
   beforeEach(() => {
@@ -30,8 +35,9 @@ describe('ResumeUploader', () => {
     mockEq.mockReset()
     mockUpdate.mockClear()
     mockFrom.mockClear()
+    mockCreateClient.mockReset()
 
-    jest.spyOn(supabaseClient, 'createClient').mockReturnValue({
+    mockCreateClient.mockReturnValue({
       auth: {
         getUser: mockGetUser,
       },
@@ -45,7 +51,6 @@ describe('ResumeUploader', () => {
   })
 
   afterEach(() => {
-    jest.restoreAllMocks()
     jest.clearAllMocks()
   })
 

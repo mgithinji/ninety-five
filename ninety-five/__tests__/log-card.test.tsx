@@ -1,13 +1,17 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { LogCard } from '@/components/features/LogCard'
-import * as supabaseClient from '@/lib/supabase/client'
+import { createClient } from '@/lib/supabase/client'
 
 jest.mock('sonner', () => ({
   toast: {
     success: jest.fn(),
     error: jest.fn(),
   },
+}))
+
+jest.mock('@/lib/supabase/client', () => ({
+  createClient: jest.fn(),
 }))
 
 jest.mock('@/components/ui/sonner', () => ({
@@ -27,13 +31,15 @@ const log = {
   experience: null,
 } as const
 
+const mockCreateClient = createClient as jest.MockedFunction<typeof createClient>
+
 describe('LogCard', () => {
   beforeEach(() => {
-    jest.spyOn(supabaseClient, 'createClient').mockReturnValue({} as never)
+    mockCreateClient.mockReset()
+    mockCreateClient.mockReturnValue({} as never)
   })
 
   afterEach(() => {
-    jest.restoreAllMocks()
     jest.clearAllMocks()
   })
 
