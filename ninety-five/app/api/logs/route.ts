@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { openai } from '@/lib/openai'
+import type { ChatCompletion } from 'openai/resources/chat/completions'
 
 const ENHANCE_PROMPT = `
 You are processing a work accomplishment log entry. Your job is to:
@@ -110,15 +111,19 @@ export async function POST(request: NextRequest) {
       .replace('{{INPUT}}', raw_input)
 
     const completion = await openai.chat.completions.create({
-      model: 'gpt-5.2',
+      model: 'gpt-4o',
       messages: [
         { role: 'system', content: 'You are a professional resume writer. Return only valid JSON.' },
         { role: 'user', content: prompt }
       ],
-      response_format: { type: 'json_object' }
+      temperature: 0.3
     })
 
-    const message = completion.choices[0]?.message
+    // Type guard to ensure we have a ChatCompletion with choices
+    const message = 'choices' in completion 
+      ? completion.choices[0]?.message 
+      : null
+
     if (!message?.content) {
       throw new Error('No response from AI')
     }

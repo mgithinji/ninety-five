@@ -127,7 +127,11 @@ export async function POST(request: NextRequest) {
       max_completion_tokens: 4000
     })
 
-    const message = completion.choices[0]?.message
+    // Type guard to ensure we have a ChatCompletion with choices
+    const message = 'choices' in completion 
+      ? completion.choices[0]?.message 
+      : null
+
     if (!message?.content) {
       throw new Error('No response from AI')
     }
