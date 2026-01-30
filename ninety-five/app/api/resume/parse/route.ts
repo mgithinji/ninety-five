@@ -1,8 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { openai } from '@/lib/openai'
-import type { ChatCompletionContentPart } from 'openai/resources/chat/completions'
-import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.mjs'
+import pdfParse from 'pdf-parse'
 
 const PARSE_PROMPT = `
 You are a professional resume parser. Extract ALL information from this resume into structured JSON.
@@ -57,6 +56,8 @@ Rules:
 Resume text:
 `
 
+export const runtime = 'nodejs'
+
 export async function POST(request: NextRequest) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -88,27 +89,18 @@ export async function POST(request: NextRequest) {
     if (downloadError) throw downloadError
     console.log('PDF downloaded successfully, size:', fileData?.size)
 
-    // Step 3: Extract text from PDF using pdfjs-dist
+    if (!fileData) {
+      throw new Error('No resume file data returned from storage')
+    }
+
+    // Step 3: Extract text from PDF
     console.log('Step 3: Extracting text from PDF...')
     const arrayBuffer = await fileData.arrayBuffer()
+    const pdfData = await pdfParse(Buffer.from(arrayBuffer))
+    const extractedText = (pdfData.text || '').trim()
 
-    // Configure pdfjs-dist worker
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'pdfjs-dist/legacy/build/pdf.worker.mjs'
-
-    // Load PDF document using Uint8Array
-    const uint8Array = new Uint8Array(arrayBuffer)
-    const loadingTask = pdfjsLib.getDocument({ data: uint8Array })
-    const pdf = await loadingTask.promise
-
-    // Extract text from all pages
-    let extractedText = ''
-    for (let i = 1; i <= pdf.numPages; i++) {
-      const page = await pdf.getPage(i)
-      const textContent = await page.getTextContent()
-      const pageText = textContent.items
-        .map((item: any) => item.str)
-        .join(' ')
-      extractedText += pageText + '\n\n'
+    if (!extractedText) {
+      throw new Error('No text extracted from resume PDF')
     }
 
     console.log(`Text extracted successfully, length: ${extractedText.length} characters`)
